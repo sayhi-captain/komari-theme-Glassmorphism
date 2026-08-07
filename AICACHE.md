@@ -586,4 +586,5 @@
 - Added a second display guard: the homepage Ping panel renders only when the node has applicable tasks and actual Ping history data. This removes empty `-` panels from nodes without monitoring records.
 - Replaced the nested native `<button>` with an accessible `div[role=button]` and removed the header bottom border that produced the tiny TCPing separator/overlay artifact.
 - Extended the visual fixture to return Ping records only for assigned nodes. Full visual regression: 11/11 passed.
-- Next: commit, build, push over SSH, move the formal stable `v3.3.4` tag, and update its Release asset.
+- Completed: commit `9624f58` pushed over SSH; `bun run build` passed; formal stable `v3.3.4` tag and Release asset now point to the fix.
+- Release asset: `komari-theme-Glassmorphism-build-9624f58.zip`, SHA-256 `29afd7e786c4ced84856c92f8d090f89f813eeb97db30068835a018ac21efc2a`.

@@ -602,4 +602,5 @@
 - Fixed homepage self-selected latency ordering: task selection now filters the visible task set against the already weight-sorted backend task list, instead of using the user's checkbox/reselection order.
 - The same canonical order is passed into per-task Ping statistics, so removing and re-adding a task cannot move it to the end of the TCPing panel.
 - Added a two-task visual regression covering select, deselect, and reselect flows. Full visual regression passed 12/12; targeted ESLint, type-check, build, and `git diff --check` passed.
-- Next: commit and publish this fix while keeping the stable release line at `v3.3.4`.
+- Completed: commit `ff06918` pushed through the SSH remote; stable `v3.3.4` tag and formal Release now point to the order fix.
+- Release asset: `komari-theme-Glassmorphism-build-ff06918.zip`, SHA-256 `a5382b60a637d4a8331d427f8492860621b2d1dd92a676b23c06b3748266afce`.

@@ -204,6 +204,12 @@ export function useNodePingDisplay(
     return selectedTaskIdsForNode.value === undefined || selectedTaskIdsForNode.value.length > 0
   })
 
+  const latencyPanelEmptyState = computed(() => {
+    if (applicableTasks.value.length)
+      return pingStats.loading.value ? '正在加载延迟数据' : '暂无延迟监测数据'
+    return '未配置延迟监测'
+  })
+
   const taskDisplays = computed(() => {
     if (!latencySelection.hasExplicitSelection.value)
       return []
@@ -251,6 +257,7 @@ export function useNodePingDisplay(
     lossPanelTooltip,
     selectedTaskLabel,
     showLatencyPanel,
+    latencyPanelEmptyState,
     taskDisplays,
     taskPanelTitle,
   }

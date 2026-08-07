@@ -98,6 +98,7 @@ test('home latency panel follows per-node task assignments', async ({ page }) =>
   const unassignedCard = page.getByRole('button', { name: '查看节点 香港边缘节点-超长名称布局测试 详情' })
   await expect(assignedCard.locator('[data-node-ping-bars="latency"]')).toBeVisible()
   await expect(unassignedCard.locator('[data-node-ping-bars="latency"]')).toHaveCount(0)
+  await expect(unassignedCard.locator('[data-node-ping-empty]')).toContainText('未配置延迟监测')
 })
 
 test('free node pricing stays semantic across home, finance, and detail', async ({ page }) => {

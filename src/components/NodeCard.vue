@@ -96,6 +96,7 @@ const {
   lossPanelTooltip,
   selectedTaskLabel,
   showLatencyPanel,
+  latencyPanelEmptyState,
   taskDisplays,
   taskPanelTitle,
 } = useNodePingDisplay(() => props.node.uuid, { enabled: () => props.pingEnabled })
@@ -531,6 +532,17 @@ function hasRegion(region: string | null | undefined): boolean {
               </div>
             </div>
           </template>
+        </div>
+
+        <div
+          v-if="!showLatencyPanel && props.pingEnabled && props.node.online"
+          data-node-ping-empty
+          class="mt-1 flex min-h-8 items-center gap-2 border-t border-border/20 pt-2 text-[10px] text-muted-foreground/70"
+        >
+          <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-md bg-slate-500/5">
+            <Icon icon="tabler:activity-off" width="13" height="13" class="opacity-65" />
+          </span>
+          <span class="truncate">{{ latencyPanelEmptyState }}</span>
         </div>
 
         <!-- 自定义标签 -->

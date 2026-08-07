@@ -588,3 +588,10 @@
 - Extended the visual fixture to return Ping records only for assigned nodes. Full visual regression: 11/11 passed.
 - Completed: commit `9624f58` pushed over SSH; `bun run build` passed; formal stable `v3.3.4` tag and Release asset now point to the fix.
 - Release asset: `komari-theme-Glassmorphism-build-9624f58.zip`, SHA-256 `29afd7e786c4ced84856c92f8d090f89f813eeb97db30068835a018ac21efc2a`.
+
+## 2026-08-07 no-latency card empty state
+
+- Added a compact bottom state for online nodes without applicable latency tasks: `未配置延迟监测`. Nodes with assigned tasks but no samples show `暂无延迟监测数据`; no placeholder latency values or empty Ping bars are rendered.
+- Kept the state independent from the TCPing panel condition so it renders correctly in both `comfortable` and `large` card layouts. The state uses a low-height separator row to avoid an abrupt empty card ending and remains narrow-screen safe.
+- Added a visual assertion for unassigned nodes. Targeted checks passed; full visual regression passed 11/11; `bun run build` passed.
+- Next: commit and publish this layout refinement while keeping the stable release line at `v3.3.4`.

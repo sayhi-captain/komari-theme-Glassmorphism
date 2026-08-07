@@ -88,6 +88,18 @@ test('home mini card metric icons remain accessible', async ({ page }) => {
   await expect(card.getByRole('img', { name: '内存' })).toBeVisible()
 })
 
+test('home latency panel follows per-node task assignments', async ({ page }) => {
+  const assignedUuid = '00000000-0000-4000-8000-000000000001'
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await installKomariFixture(page, { hideEarth: true, pingClientUuids: [assignedUuid] })
+  await openStablePage(page)
+
+  const assignedCard = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
+  const unassignedCard = page.getByRole('button', { name: '查看节点 香港边缘节点-超长名称布局测试 详情' })
+  await expect(assignedCard.locator('[data-node-ping-bars="latency"]')).toBeVisible()
+  await expect(unassignedCard.locator('[data-node-ping-bars="latency"]')).toHaveCount(0)
+})
+
 test('free node pricing stays semantic across home, finance, and detail', async ({ page }) => {
   const freeNodeName = '主控-洛杉矶'
   const freeNodeUuid = '00000000-0000-4000-8000-000000000001'

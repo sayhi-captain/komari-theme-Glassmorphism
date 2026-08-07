@@ -571,3 +571,11 @@
 - Implemented 7 deterministic Playwright baselines: light desktop home, dark mobile home, accessible desktop list, Cobe and tiled earth layouts, light desktop detail and dark mobile detail. All use mocked Komari API/RPC/visitor data, fixed time, disabled animations and hidden dynamic 3D canvas pixels while retaining globe layout boundaries.
 - First baseline generation and repeated comparison both passed 7/7 with system Chrome. Windows system-channel Chrome did not exit cleanly after reporting results, so release validation does not treat that local channel teardown as a product failure; CI installs and runs Playwright's managed Chromium.
 - Added the independent `Visual Regression` workflow for pull requests and `main`, with actual/diff/HTML report artifacts retained for 14 days on failure. Release target is v3.3.0.
+
+## 2026-08-07 homepage Ping assignment follow-up
+
+- Root cause: homepage task applicability must follow Komari's `clients` UUID bindings; an empty/missing binding list must not be interpreted as every node. `default_on` remains the explicit all-node/default rule.
+- Changed `src/utils/latencySelection.ts` to normalize array/string client bindings, match trimmed UUIDs, and return false for unbound tasks.
+- Added a Playwright regression fixture/test proving a Ping panel appears only on the assigned node.
+- Validation: targeted ESLint, `bun run type-check`, `git diff --check`, and the focused Playwright test all passed.
+- Next: run the full visual/build validation, commit, push through the SSH remote, rebuild the stable `v3.3.4` archive, and update the existing formal Release asset.

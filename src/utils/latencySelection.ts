@@ -4,6 +4,7 @@ export const HOME_LATENCY_SELECTION_STORAGE_KEY = 'komari-theme-glassmorphism:ho
 export const MAX_HOME_LATENCY_TASKS = 3
 const CONFIG_TASK_SEPARATOR_REGEX = /[\s,，;；]+/u
 const CONFIG_ALIAS_SEPARATOR_REGEX = /[,，;；\n]+/u
+const TASK_CLIENT_SEPARATOR_REGEX = /[\s,，;；]+/u
 
 export function normalizeLatencyTaskType(task: PingTaskInfo): string {
   const type = task.type?.trim().toLowerCase()
@@ -29,16 +30,19 @@ export function normalizeLatencyTaskType(task: PingTaskInfo): string {
 }
 
 export function latencyTaskAppliesToNode(task: PingTaskInfo, uuid: string): boolean {
-  const clients = Array.isArray(task.clients)
-    ? task.clients.map(client => client.trim()).filter(Boolean)
-    : []
+  const rawClients: unknown = task.clients
+  const clients = Array.isArray(rawClients)
+    ? rawClients.filter((client): client is string => typeof client === 'string').map(client => client.trim()).filter(Boolean)
+    : typeof rawClients === 'string'
+      ? rawClients.split(TASK_CLIENT_SEPARATOR_REGEX).map(client => client.trim()).filter(Boolean)
+      : []
   const normalizedUuid = uuid.trim()
 
   if (normalizedUuid && clients.includes(normalizedUuid))
     return true
   if (task.default_on === true)
     return true
-  return clients.length === 0
+  return false
 }
 
 export function latencyTaskLabel(task: PingTaskInfo): string {

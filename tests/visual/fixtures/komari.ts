@@ -23,6 +23,7 @@ export interface VisualFixtureOptions {
   nodeCardSize?: 'mini' | 'compact' | 'comfortable' | 'large'
   freePriceNode?: boolean
   hideEarth?: boolean
+  pingClientUuids?: string[]
 }
 
 function uuidFor(index: number): string {
@@ -353,7 +354,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     body: JSON.stringify({
       status: 'success',
       message: 'ok',
-      data: [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1, clients: Object.keys(clientFixtures) }],
+      data: [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1, clients: options.pingClientUuids ?? Object.keys(clientFixtures) }],
     }),
   }))
   await page.route('**/rpc2', route => handleRpc(route, clientFixtures))

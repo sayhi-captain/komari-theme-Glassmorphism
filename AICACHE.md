@@ -578,4 +578,5 @@
 - Changed `src/utils/latencySelection.ts` to normalize array/string client bindings, match trimmed UUIDs, and return false for unbound tasks.
 - Added a Playwright regression fixture/test proving a Ping panel appears only on the assigned node.
 - Validation: targeted ESLint, `bun run type-check`, `git diff --check`, and the focused Playwright test all passed.
-- Next: run the full visual/build validation, commit, push through the SSH remote, rebuild the stable `v3.3.4` archive, and update the existing formal Release asset.
+- Completed: full visual regression 11/11 passed; `bun run build` passed; commit `ea92df9` was pushed through the SSH remote; stable `v3.3.4` tag and formal Release asset now point to the fix.
+- Release asset: `komari-theme-Glassmorphism-build-ea92df9.zip`, SHA-256 `42d18dbc7539d97b66246046a3f3830b640748357f607ecce5a01374e835e582`.

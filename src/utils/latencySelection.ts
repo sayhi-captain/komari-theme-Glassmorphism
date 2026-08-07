@@ -9,6 +9,12 @@ export function normalizeLatencyTaskType(task: PingTaskInfo): string {
   const type = task.type?.trim().toLowerCase()
   if (type === 'https')
     return 'HTTP'
+  if (type === 'tcp' || type === 'tcping')
+    return 'TCP'
+  if (type === 'icmp' || type === 'ping')
+    return 'ICMP'
+  if (type === 'http')
+    return 'HTTP'
   if (type)
     return type.toUpperCase()
 

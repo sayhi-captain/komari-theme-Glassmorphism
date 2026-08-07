@@ -40,6 +40,14 @@ function handleKeyboardOpen(event: KeyboardEvent) {
   emit('click')
 }
 
+function handlePingPanelKeyboard(event: KeyboardEvent): void {
+  if (event.key !== 'Enter' && event.key !== ' ')
+    return
+  event.preventDefault()
+  event.stopPropagation()
+  emit('pingClick')
+}
+
 interface RemainingInfoTag {
   icon: string
   text?: string
@@ -442,16 +450,18 @@ function hasRegion(region: string | null | undefined): boolean {
         </div>
 
         <!-- 延迟 + 丢包 -->
-        <button
+        <div
           v-if="showLatencyPanel"
-          type="button"
           class="group/panel relative flex min-w-0 w-full flex-col overflow-hidden rounded-lg bg-slate-500/5 px-2.5 py-2 text-left"
           :class="[!props.node.online ? 'blur-xs opacity-50' : '']"
           :title="`${selectedTaskLabel}：${latencyPanelTooltip}；${lossPanelTooltip}`"
           :aria-label="`${props.node.name} 延迟监测`"
+          role="button"
+          tabindex="0"
           @click.stop="emit('pingClick')"
+          @keydown="handlePingPanelKeyboard"
         >
-          <div class="mb-1.5 flex min-w-0 items-center justify-between gap-2 border-b border-border/30 pb-1.5">
+          <div class="mb-2 flex min-w-0 items-center justify-between gap-2 pb-1.5">
             <strong class="truncate text-[11px] leading-none text-foreground/80">{{ taskPanelTitle }}</strong>
             <span class="shrink-0 text-[10px] text-muted-foreground">4H · {{ taskDisplays.length ? `${taskDisplays.length}/3` : '全部' }}</span>
           </div>
@@ -521,7 +531,7 @@ function hasRegion(region: string | null | undefined): boolean {
               </div>
             </div>
           </template>
-        </button>
+        </div>
 
         <!-- 自定义标签 -->
         <div v-if="customTags.length > 0" class="flex flex-wrap gap-1">

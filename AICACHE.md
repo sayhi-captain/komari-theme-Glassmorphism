@@ -580,3 +580,10 @@
 - Validation: targeted ESLint, `bun run type-check`, `git diff --check`, and the focused Playwright test all passed.
 - Completed: full visual regression 11/11 passed; `bun run build` passed; commit `ea92df9` was pushed through the SSH remote; stable `v3.3.4` tag and formal Release asset now point to the fix.
 - Release asset: `komari-theme-Glassmorphism-build-ea92df9.zip`, SHA-256 `42d18dbc7539d97b66246046a3f3830b640748357f607ecce5a01374e835e582`.
+
+## 2026-08-07 Ping empty-panel and TCPing separator follow-up
+
+- Added a second display guard: the homepage Ping panel renders only when the node has applicable tasks and actual Ping history data. This removes empty `-` panels from nodes without monitoring records.
+- Replaced the nested native `<button>` with an accessible `div[role=button]` and removed the header bottom border that produced the tiny TCPing separator/overlay artifact.
+- Extended the visual fixture to return Ping records only for assigned nodes. Full visual regression: 11/11 passed.
+- Next: commit, build, push over SSH, move the formal stable `v3.3.4` tag, and update its Release asset.

@@ -199,6 +199,8 @@ export function useNodePingDisplay(
   const showLatencyPanel = computed(() => {
     if (!applicableTasks.value.length)
       return false
+    if (!pingStats.hasData.value)
+      return false
     return selectedTaskIdsForNode.value === undefined || selectedTaskIdsForNode.value.length > 0
   })
 

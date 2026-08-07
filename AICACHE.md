@@ -594,4 +594,5 @@
 - Added a compact bottom state for online nodes without applicable latency tasks: `未配置延迟监测`. Nodes with assigned tasks but no samples show `暂无延迟监测数据`; no placeholder latency values or empty Ping bars are rendered.
 - Kept the state independent from the TCPing panel condition so it renders correctly in both `comfortable` and `large` card layouts. The state uses a low-height separator row to avoid an abrupt empty card ending and remains narrow-screen safe.
 - Added a visual assertion for unassigned nodes. Targeted checks passed; full visual regression passed 11/11; `bun run build` passed.
-- Next: commit and publish this layout refinement while keeping the stable release line at `v3.3.4`.
+- Completed: commit `38b7998` pushed through the SSH remote; stable `v3.3.4` tag and formal Release now point to the layout refinement.
+- Release asset: `komari-theme-Glassmorphism-build-38b7998.zip`, SHA-256 `db576a8f90df84f180922401b5739fcd56744152c1ac5dbea91a7fe8caca8720`.

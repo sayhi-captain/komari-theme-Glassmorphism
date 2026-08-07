@@ -348,6 +348,14 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     contentType: 'application/json',
     body: JSON.stringify({ status: 'success', message: 'ok', data: { version: '1.2.6-visual', hash: 'visual' } }),
   }))
+  await page.route('**/api/task/ping', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      status: 'success',
+      message: 'ok',
+      data: [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1, clients: Object.keys(clientFixtures) }],
+    }),
+  }))
   await page.route('**/rpc2', route => handleRpc(route, clientFixtures))
   await page.route('https://ipwho.is/', route => route.fulfill({
     contentType: 'application/json',

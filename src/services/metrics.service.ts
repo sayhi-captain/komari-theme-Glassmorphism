@@ -2,6 +2,7 @@ import type { MetricDefinition, MetricQueryParams, MetricQueryResponse, PingMetr
 import { CACHE_CONFIG } from '@/constants/cache'
 import { SharedCache } from '@/services/cache.service'
 import { requestManager } from '@/services/request.service'
+import { getSharedApi } from '@/utils/api'
 import { getSharedRpc, RpcError } from '@/utils/rpc'
 
 function normalizeHours(hours: number | null | undefined): number | undefined {
@@ -145,7 +146,7 @@ export async function loadPingMetricStats(params: PingMetricStatsParams): Promis
 export async function loadPublicPingTasks(): Promise<PingTaskInfo[]> {
   return requestManager.run(
     getPublicPingTasksRequestKey(),
-    async () => getSharedRpc().getPublicPingTasks(),
+    async () => getSharedApi().getPublicPingTasks(),
     { shouldRetry: shouldRetryMetricRequest },
   )
 }

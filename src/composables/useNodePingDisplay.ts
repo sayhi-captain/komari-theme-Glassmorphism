@@ -1,5 +1,6 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
+import { useLatencyTaskSelection } from '@/composables/useLatencyTaskSelection'
 import { useNodePingStats } from '@/composables/useNodePingStats'
 import { PING_SUMMARY_MAX_COUNT } from '@/constants/load'
 import { useAppStore } from '@/stores/app'
@@ -52,6 +53,7 @@ export function useNodePingDisplay(
   options: UseNodePingDisplayOptions = {},
 ) {
   const appStore = useAppStore()
+  const latencySelection = useLatencyTaskSelection()
 
   const pingStatsEnabled = computed(() => {
     if (toValue(options.enabled) === false)
@@ -72,10 +74,11 @@ export function useNodePingDisplay(
     hours: pingStatsHours,
     enabled: pingStatsEnabled,
     maxCount: PING_SUMMARY_MAX_COUNT,
+    taskIds: latencySelection.selectedTaskIds,
   })
 
-  function buildPingBars(metric: NodePingMetric): NodePingBar[] {
-    const points = pingStats.history.value
+  function buildPingBars(metric: NodePingMetric, history = pingStats.history.value): NodePingBar[] {
+    const points = history
     if (!points.length)
       return []
 
@@ -156,7 +159,41 @@ export function useNodePingDisplay(
     const volatility = pingStats.avgVolatility.value > 0
       ? `，平均波动 ${pingStats.avgVolatility.value.toFixed(2)}`
       : ''
-    return `平均丢包 ${pingStats.avgLoss.value.toFixed(1)}%${volatility}`
+    return `平均丢包 ${pingStats.avgLoss.value.toFixed(1)}%${volatility}${latencySelection.hasExplicitSelection.value ? '（自选任务）' : ''}`
+  })
+
+  const selectedTaskLabel = computed(() => {
+    if (!latencySelection.hasExplicitSelection.value)
+      return '全部任务'
+    const selected = new Set(latencySelection.selectedTaskIds.value ?? [])
+    const names = latencySelection.tasks.value
+      .filter(task => selected.has(task.id))
+      .map(task => latencySelection.taskLabel(task.id, task.name.trim() || `任务 ${task.id}`))
+    return names.length ? names.join('、') : '未选择任务'
+  })
+
+  const showLatencyPanel = computed(() => latencySelection.selectedTaskIds.value === undefined || latencySelection.selectedTaskIds.value.length > 0)
+
+  const taskDisplays = computed(() => {
+    if (!latencySelection.hasExplicitSelection.value)
+      return []
+
+    const statsByTaskId = new Map(pingStats.tasks.value.map(task => [task.taskId, task]))
+    const taskById = new Map(latencySelection.tasks.value.map(task => [task.id, task]))
+    return (latencySelection.selectedTaskIds.value ?? []).map((taskId) => {
+      const taskStats = statsByTaskId.get(taskId)
+      const task = taskById.get(taskId)
+      const latencyBars = taskStats?.history?.length ? buildPingBars('latency', taskStats.history) : buildEmptyPingBars('latency')
+      const lossBars = taskStats?.history?.length ? buildPingBars('loss', taskStats.history) : buildEmptyPingBars('loss')
+      return {
+        taskId,
+        label: latencySelection.taskLabel(taskId, task?.name?.trim() || `任务 ${taskId}`),
+        latencyDisplay: taskStats?.hasData ? `${Math.round(taskStats.avgLatency)} ms` : pingStats.loading.value ? '加载中' : '-',
+        lossDisplay: taskStats?.hasData ? `${taskStats.avgLoss.toFixed(1)}%` : pingStats.loading.value ? '加载中' : '-',
+        latencyBars,
+        lossBars,
+      }
+    })
   })
 
   return {
@@ -169,5 +206,8 @@ export function useNodePingDisplay(
     lossDisplay,
     latencyPanelTooltip,
     lossPanelTooltip,
+    selectedTaskLabel,
+    showLatencyPanel,
+    taskDisplays,
   }
 }

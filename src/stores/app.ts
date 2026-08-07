@@ -1081,6 +1081,12 @@ const useAppStore = defineStore('app', () => {
 
   const homeQuickControlsEnabled = computed<boolean>(() => readBooleanSetting(themeSettings.value, 'homeQuickControlsEnabled', true))
 
+  const latencyPickerEnabled = computed<boolean>(() => readBooleanSetting(themeSettings.value, 'latencyPickerEnabled', true))
+
+  const latencyDefaultTasks = computed<string>(() => readStringSetting(themeSettings.value, 'latencyDefaultTasks'))
+
+  const latencyDefaultAliases = computed<string>(() => readStringSetting(themeSettings.value, 'latencyDefaultAliases'))
+
   const homeQuickControlOrder = computed<HomeQuickControlKey[]>(() => {
     const settings = themeSettings.value
     const preset = parseHomeQuickControlPreset(settings.homeQuickControlPreset)
@@ -1329,6 +1335,9 @@ const useAppStore = defineStore('app', () => {
     visitorAuditSupported,
     visitorAuditEnabled,
     homeQuickControlsEnabled,
+    latencyPickerEnabled,
+    latencyDefaultTasks,
+    latencyDefaultAliases,
     homeQuickControlOrder,
     nodeListMetadataEnabled,
     nodeListMetadataFields,

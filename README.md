@@ -312,6 +312,8 @@ common:getRecords / legacy records fallback
 - `mini` / `compact` / `comfortable` / `large` 四档卡片密度，默认保持 `compact`
 - 官方、基础、运维、资源、财务、流量、GPU、资产、完整和自定义总览方案
 - 月成本、总流量、上下行、峰值、离线、高负载、即将到期等快捷控制
+- 首页右上角支持从 Komari 已创建的 Ping 任务中自选 0～3 项；选择保存在当前浏览器，卡片与列表延迟统计只汇总所选任务
+- 选择 0 项可隐藏首页延迟模块，“恢复后台默认”可回到后台配置的默认任务（未配置时为全部任务）
 - 节点 `message` 在卡片 / 列表以纯文本提示，不使用 `v-html`
 - 自定义图片 / 视频背景、毛玻璃配色预设、色觉辅助配色和动画减弱选项
 
@@ -404,7 +406,7 @@ API / RPC
 | 首页布局       | 公告、地球样式、访客信息、毛玻璃 / 色觉辅助配色     |
 | 总览卡片       | 10 套方案、自定义 keys 和显示顺序                   |
 | 高级工具与隐私 | 工具总开关、隐藏后台 / 价格、厂商别名、导出二级密码 |
-| 快捷控制与列表 | 快捷按钮、列表元数据、离线置底、预警阈值            |
+| 快捷控制与列表 | 快捷按钮、列表元数据、离线置底、预警阈值、首页自选延迟 |
 | 详情概览       | 18 类指标卡、7 套方案、分区标签页                   |
 | 详情图表       | 12 个图表族、9 套方案、GPU 图表和自定义 keys        |
 | 自定义背景     | 亮 / 暗 URL、图片 / 视频、模糊和遮罩                |
@@ -444,6 +446,24 @@ bun run lint
 bun run build
 bun run test:visual
 bun run preview
+```
+
+### Fork 同步主仓库
+
+本 Fork 的 `origin` 指向个人仓库，主仓库配置为 `upstream`。主仓库有更新时，在功能分支上执行：
+
+```bash
+git fetch upstream
+git merge upstream/main
+git push origin feature/home-latency-selection
+```
+
+如果希望把同步后的内容合并回 `main`，可在确认冲突并完成测试后执行：
+
+```bash
+git switch main
+git merge feature/home-latency-selection
+git push origin main
 ```
 
 更新确认过的视觉基准图：

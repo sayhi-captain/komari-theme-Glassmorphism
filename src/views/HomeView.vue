@@ -7,12 +7,14 @@ import { useDebounceFn } from '@vueuse/core'
 import { computed, defineAsyncComponent, nextTick, onActivated, onDeactivated, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DeferredRender from '@/components/DeferredRender.vue'
+import LatencyTaskSelector from '@/components/LatencyTaskSelector.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Empty } from '@/components/ui/empty'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useLatencyTaskSelection } from '@/composables/useLatencyTaskSelection'
 import { useVisitorAudit } from '@/composables/useVisitorAudit'
 import { UI_CONFIG } from '@/constants/ui'
 import { useAppStore } from '@/stores/app'
@@ -65,6 +67,15 @@ const appStore = useAppStore()
 const nodesStore = useNodesStore()
 const router = useRouter()
 const { record: recordVisitorEvent } = useVisitorAudit()
+const latencySelection = useLatencyTaskSelection()
+const {
+  tasks: latencyTasks,
+  selectedTaskIds: latencySelectedTaskIds,
+  selectedTaskCount: latencySelectedTaskCount,
+  hasExplicitSelection: latencyHasExplicitSelection,
+  loading: latencyTasksLoading,
+  error: latencyTaskError,
+} = latencySelection
 const isViewActive = ref(true)
 
 onActivated(() => {
@@ -87,6 +98,7 @@ const activeQuickControl = ref<HomeQuickControlKey | null>(null)
 const exchangeRates = ref(financeHelper.DEFAULT_EXCHANGE_RATES)
 const excludeFreeNodes = ref(true)
 const pingDialogNode = ref<NodeData | null>(null)
+const latencySelectorOpen = ref(false)
 
 const homeToolPermissionMap: Record<PrivateHomeToolKey, PermissionKey> = {
   topology: 'nodeTopology',
@@ -303,6 +315,22 @@ function openPingDialog(node: NodeData) {
   pingDialogNode.value = node
 }
 
+async function openLatencySelector(): Promise<void> {
+  latencySelectorOpen.value = true
+  await latencySelection.loadTasks()
+}
+
+function saveLatencySelection(ids: number[]): void {
+  latencySelection.setSelectedTaskIds(ids)
+  void recordVisitorEvent({
+    event: 'home_tool_open',
+    path: '/',
+    route: 'home',
+    target: 'latency_selection',
+    detail: { selected_task_count: ids.length },
+  })
+}
+
 function getNodeItemTransitionKey(node: NodeData): string {
   return `${appStore.nodeSelectedGroup}-${activeQuickControl.value ?? 'all'}-${node.uuid}`
 }
@@ -491,6 +519,23 @@ const nodeCardGridClass = computed(() => {
               </div>
 
               <Button
+                v-if="appStore.latencyPickerEnabled"
+                variant="outline" size="icon" aria-label="首页自选延迟"
+                class="relative h-8 w-8 rounded-md border-none bg-background/50 shadow-none backdrop-blur-xs hover:bg-background/60"
+                :class="latencyHasExplicitSelection ? '!text-selection !bg-background' : ''"
+                title="首页自选延迟"
+                @click="void openLatencySelector()"
+              >
+                <Icon icon="tabler:adjustments-horizontal" :width="14" :height="14" />
+                <span
+                  v-if="latencyHasExplicitSelection"
+                  class="absolute -right-1 -top-1 min-w-3.5 rounded-full bg-primary px-0.5 text-[9px] leading-3.5 text-primary-foreground"
+                >
+                  {{ latencySelectedTaskCount }}
+                </span>
+              </Button>
+
+              <Button
                 variant="outline" size="icon" aria-label="卡片视图"
                 class="w-8 h-8 border-none bg-background/50 backdrop-blur-xs shadow-none hover:bg-background/60 rounded-md"
                 :class="[appStore.nodeViewMode === 'card' ? '!text-selection !bg-background' : '']"
@@ -587,6 +632,16 @@ const nodeCardGridClass = computed(() => {
         </Tabs>
       </div>
     </div>
+    <LatencyTaskSelector
+      :open="latencySelectorOpen"
+      :tasks="latencyTasks"
+      :selected-task-ids="latencySelectedTaskIds"
+      :loading="latencyTasksLoading"
+      :error="latencyTaskError"
+      @update:open="latencySelectorOpen = $event"
+      @save="saveLatencySelection"
+      @reset="latencySelection.resetSelectedTaskIds()"
+    />
     <PingMonitorDialog
       v-if="pingDialogNode"
       :open="Boolean(pingDialogNode)"

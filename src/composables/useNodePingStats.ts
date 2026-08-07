@@ -13,12 +13,21 @@ export interface NodePingHistoryPoint {
   loss: number | null
 }
 
+export interface NodePingTaskStats {
+  taskId: number
+  avgLatency: number
+  avgLoss: number
+  history: NodePingHistoryPoint[]
+  hasData: boolean
+}
+
 export interface NodePingStatsState {
   avgLatency: number
   avgLoss: number
   avgVolatility: number
   history: NodePingHistoryPoint[]
   hasData: boolean
+  tasks: NodePingTaskStats[]
 }
 
 interface PingRecord {
@@ -29,6 +38,7 @@ interface PingRecord {
 }
 
 interface MetricLossPoint {
+  taskId: number
   time: string
   value: number
   count: number
@@ -76,6 +86,7 @@ function createEmptyStats(): NodePingStatsState {
     avgVolatility: 0,
     history: [],
     hasData: false,
+    tasks: [],
   }
 }
 
@@ -304,6 +315,7 @@ async function loadPingMetricRecords(nodeUuid: string, hours: number, maxCount?:
             continue
 
           metricLossPoints.push({
+            taskId,
             time: point.time,
             value: point.value,
             count: isFiniteNumber(point.count) && point.count > 0 ? point.count : 1,
@@ -542,10 +554,45 @@ function getPercentile(values: number[], percentile: number): number | null {
   return lowerValue + (upperValue - lowerValue) * (position - lowerIndex)
 }
 
-function buildStats(records: PingRecord[], metricStats?: PingMetricTaskStats[], metricLossPoints?: MetricLossPoint[]): NodePingStatsState {
-  const statsWithSamples = (metricStats ?? []).filter(stat => stat.total > 0)
+function buildStats(
+  records: PingRecord[],
+  metricStats?: PingMetricTaskStats[],
+  metricLossPoints?: MetricLossPoint[],
+  taskIds?: readonly number[],
+  includeTaskStats = true,
+): NodePingStatsState {
+  if (taskIds && taskIds.length === 0)
+    return createEmptyStats()
+
+  const selectedTaskIds = taskIds ? new Set(taskIds) : null
+  const selectedRecords = selectedTaskIds
+    ? records.filter(record => selectedTaskIds.has(record.task_id))
+    : records
+  const selectedMetricStats = selectedTaskIds
+    ? (metricStats ?? []).filter(stat => selectedTaskIds.has(normalizeTaskId(stat.task_id)))
+    : metricStats ?? []
+  const selectedMetricLossPoints = selectedTaskIds
+    ? (metricLossPoints ?? []).filter(point => selectedTaskIds.has(point.taskId))
+    : metricLossPoints
+  const taskIdsForDisplay = selectedTaskIds
+    ? [...selectedTaskIds]
+    : [...new Set([
+        ...selectedMetricStats.map(stat => normalizeTaskId(stat.task_id)),
+        ...selectedRecords.map(record => record.task_id),
+      ])]
+  const taskStats = includeTaskStats
+    ? taskIdsForDisplay.map(taskId => buildStats(records, metricStats, metricLossPoints, [taskId], false))
+        .map((stats, index) => ({
+          taskId: taskIdsForDisplay[index]!,
+          avgLatency: stats.avgLatency,
+          avgLoss: stats.avgLoss,
+          history: stats.history,
+          hasData: stats.hasData,
+        }))
+    : []
+  const statsWithSamples = selectedMetricStats.filter(stat => stat.total > 0)
   if (statsWithSamples.length) {
-    const history = buildPingHistory(records.filter(record => record.value >= 0), metricLossPoints)
+    const history = buildPingHistory(selectedRecords.filter(record => record.value >= 0), selectedMetricLossPoints)
     const latencyValues = statsWithSamples
       .flatMap(stat => stat.valid > 0 && isFiniteNumber(stat.avg)
         ? [{ value: stat.avg, weight: stat.valid }]
@@ -568,16 +615,17 @@ function buildStats(records: PingRecord[], metricStats?: PingMetricTaskStats[], 
       avgVolatility: weightedAverage(volatilityValues),
       history,
       hasData: true,
+      tasks: taskStats,
     }
   }
 
-  const includedTaskIds = getIncludedTaskIds(records)
+  const includedTaskIds = getIncludedTaskIds(selectedRecords)
 
   if (!includedTaskIds.size)
     return createEmptyStats()
 
-  const filteredRecords = records.filter(record => includedTaskIds.has(record.task_id))
-  const history = buildPingHistory(filteredRecords)
+  const filteredRecords = selectedRecords.filter(record => includedTaskIds.has(record.task_id))
+  const history = buildPingHistory(filteredRecords, selectedMetricLossPoints)
   const taskRecords = new Map<number, PingRecord[]>()
 
   for (const record of filteredRecords) {
@@ -629,6 +677,7 @@ function buildStats(records: PingRecord[], metricStats?: PingMetricTaskStats[], 
     avgVolatility,
     history,
     hasData,
+    tasks: taskStats,
   }
 }
 
@@ -638,6 +687,7 @@ export function useNodePingStats(
     hours?: MaybeRefOrGetter<number>
     enabled?: MaybeRefOrGetter<boolean>
     maxCount?: MaybeRefOrGetter<number | undefined>
+    taskIds?: MaybeRefOrGetter<readonly number[] | undefined>
   },
 ) {
   const loading = ref(false)
@@ -652,6 +702,7 @@ export function useNodePingStats(
       maxCount,
       cacheKey: getSharedPingRecordsKey(hours, maxCount, toValue(uuid)),
       enabled: toValue(options?.enabled) ?? true,
+      taskIds: toValue(options?.taskIds),
     }
   })
 
@@ -680,7 +731,7 @@ export function useNodePingStats(
 
   // stats 由共享 getRecords 结果派生；共享记录每分钟刷新一次后会自动重算。
   const stats = computed<NodePingStatsState>(() => {
-    const { uuid: nodeUuid, hours, maxCount, enabled } = resolved.value
+    const { uuid: nodeUuid, hours, maxCount, enabled, taskIds } = resolved.value
     if (!enabled || !nodeUuid.trim())
       return createEmptyStats()
 
@@ -689,11 +740,11 @@ export function useNodePingStats(
     const entry = getSharedPingRecordsEntry(hours, maxCount, nodeUuid)
     const state = entry.data.value
     if (!state)
-      return readStatsCache(nodeUuid, hours, maxCount) ?? createEmptyStats()
+      return taskIds ? createEmptyStats() : readStatsCache(nodeUuid, hours, maxCount) ?? createEmptyStats()
 
     const records = state.recordsByClient.get(nodeUuid) ?? []
     return records.length || state.metricStats?.length
-      ? buildStats(records, state.metricStats, state.metricLossPoints)
+      ? buildStats(records, state.metricStats, state.metricLossPoints, taskIds)
       : createEmptyStats()
   })
 
@@ -757,8 +808,8 @@ export function useNodePingStats(
   watch(stats, (value) => {
     if (!value.hasData)
       return
-    const { uuid: nodeUuid, hours, maxCount, enabled } = resolved.value
-    if (enabled && nodeUuid.trim())
+    const { uuid: nodeUuid, hours, maxCount, enabled, taskIds } = resolved.value
+    if (enabled && nodeUuid.trim() && !taskIds)
       persistStats(nodeUuid, hours, maxCount, value)
   })
 
@@ -767,6 +818,7 @@ export function useNodePingStats(
     loading,
     error,
     history: computed(() => stats.value.history),
+    tasks: computed(() => stats.value.tasks),
     avgLatency: computed(() => stats.value.avgLatency),
     avgLoss: computed(() => stats.value.avgLoss),
     avgVolatility: computed(() => stats.value.avgVolatility),

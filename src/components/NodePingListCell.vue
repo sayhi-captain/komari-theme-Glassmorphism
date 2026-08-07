@@ -14,11 +14,13 @@ const emit = defineEmits<{
 const {
   latencyRenderBars,
   lossRenderBars,
+  showLatencyPanel,
 } = useNodePingDisplay(() => props.uuid, { enabled: () => props.enabled })
 </script>
 
 <template>
   <button
+    v-if="showLatencyPanel"
     type="button"
     class="group flex w-full flex-col gap-[1px] pr-4 text-left"
     aria-label="打开延迟和丢包监测"

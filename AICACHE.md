@@ -596,3 +596,10 @@
 - Added a visual assertion for unassigned nodes. Targeted checks passed; full visual regression passed 11/11; `bun run build` passed.
 - Completed: commit `38b7998` pushed through the SSH remote; stable `v3.3.4` tag and formal Release now point to the layout refinement.
 - Release asset: `komari-theme-Glassmorphism-build-38b7998.zip`, SHA-256 `db576a8f90df84f180922401b5739fcd56744152c1ac5dbea91a7fe8caca8720`.
+
+## 2026-08-07 preserve backend Ping task order
+
+- Fixed homepage self-selected latency ordering: task selection now filters the visible task set against the already weight-sorted backend task list, instead of using the user's checkbox/reselection order.
+- The same canonical order is passed into per-task Ping statistics, so removing and re-adding a task cannot move it to the end of the TCPing panel.
+- Added a two-task visual regression covering select, deselect, and reselect flows. Full visual regression passed 12/12; targeted ESLint, type-check, build, and `git diff --check` passed.
+- Next: commit and publish this fix while keeping the stable release line at `v3.3.4`.

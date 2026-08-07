@@ -69,8 +69,12 @@ export function useNodePingDisplay(
     const selectedTaskIds = latencySelection.selectedTaskIds.value
     if (selectedTaskIds === undefined)
       return undefined
-    const applicableIds = new Set(applicableTasks.value.map(task => task.id))
-    return selectedTaskIds.filter(taskId => applicableIds.has(taskId))
+    const selectedIds = new Set(selectedTaskIds)
+    // Selection only controls visibility. Keep the server-provided task order
+    // (weight, then ID) even when the user toggles tasks in another order.
+    return applicableTasks.value
+      .filter(task => selectedIds.has(task.id))
+      .map(task => task.id)
   })
 
   const pingStatsEnabled = computed(() => {
@@ -93,11 +97,9 @@ export function useNodePingDisplay(
     enabled: pingStatsEnabled,
     maxCount: PING_SUMMARY_MAX_COUNT,
     taskIds: computed(() => {
-      const applicableIds = applicableTasks.value.map(task => task.id)
-      if (latencySelection.selectedTaskIds.value === undefined)
-        return applicableIds.length ? undefined : []
-      const applicableIdSet = new Set(applicableIds)
-      return latencySelection.selectedTaskIds.value.filter(taskId => applicableIdSet.has(taskId))
+      if (selectedTaskIdsForNode.value === undefined)
+        return applicableTasks.value.length ? undefined : []
+      return selectedTaskIdsForNode.value
     }),
   })
 

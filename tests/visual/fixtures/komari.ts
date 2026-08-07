@@ -24,6 +24,16 @@ export interface VisualFixtureOptions {
   freePriceNode?: boolean
   hideEarth?: boolean
   pingClientUuids?: string[]
+  pingTasks?: Array<{ id: number, name: string, interval?: number, loss?: number, weight?: number }>
+}
+
+interface VisualPingTask {
+  id: number
+  name: string
+  interval: number
+  loss: number
+  weight: number
+  clients: string[]
 }
 
 function uuidFor(index: number): string {
@@ -213,14 +223,26 @@ function jsonRpcResult(id: unknown, result: unknown) {
   return { jsonrpc: '2.0', id, result }
 }
 
-async function handleRpc(route: Route, clientFixtures = clients, pingClientUuids?: string[]): Promise<void> {
+function buildPingTasks(clientFixtures: Record<string, unknown>, pingClientUuids?: string[], taskOptions?: VisualFixtureOptions['pingTasks']): VisualPingTask[] {
+  const clientUuids = pingClientUuids ?? Object.keys(clientFixtures)
+  return (taskOptions ?? [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]).map(task => ({
+    id: task.id,
+    name: task.name,
+    interval: task.interval ?? 60,
+    loss: task.loss ?? 3.2,
+    weight: task.weight ?? task.id,
+    clients: clientUuids,
+  }))
+}
+
+async function handleRpc(route: Route, clientFixtures = clients, pingClientUuids?: string[], taskOptions?: VisualFixtureOptions['pingTasks']): Promise<void> {
   const payload = route.request().postDataJSON() as { id: unknown, method: string, params?: Record<string, unknown> }
   const uuid = typeof payload.params?.uuid === 'string' ? payload.params.uuid : uuidFor(0)
   const pingEnabled = !pingClientUuids || pingClientUuids.includes(uuid)
   const pingRecords = pingEnabled
     ? Array.from({ length: 48 }, (_, index) => ({ task_id: 1, client: uuid, time: new Date(Date.parse(FIXED_NOW) - (47 - index) * 75_000).toISOString(), value: index % 17 === 0 ? -1 : 76 + index }))
     : []
-  const pingTasks = [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]
+  const pingTasks = buildPingTasks(clientFixtures, pingClientUuids, taskOptions)
   let result: unknown
 
   switch (payload.method) {
@@ -357,10 +379,10 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     body: JSON.stringify({
       status: 'success',
       message: 'ok',
-      data: [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1, clients: options.pingClientUuids ?? Object.keys(clientFixtures) }],
+      data: buildPingTasks(clientFixtures, options.pingClientUuids, options.pingTasks),
     }),
   }))
-  await page.route('**/rpc2', route => handleRpc(route, clientFixtures, options.pingClientUuids))
+  await page.route('**/rpc2', route => handleRpc(route, clientFixtures, options.pingClientUuids, options.pingTasks))
   await page.route('https://ipwho.is/', route => route.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({ success: true, ip: '2001:db8::25', city: 'Tokyo', region: 'Tokyo', country: 'Japan', connection: { org: 'Example Networks' } }),

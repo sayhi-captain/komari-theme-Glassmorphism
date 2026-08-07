@@ -101,6 +101,43 @@ test('home latency panel follows per-node task assignments', async ({ page }) =>
   await expect(unassignedCard.locator('[data-node-ping-empty]')).toContainText('未配置延迟监测')
 })
 
+test('home latency selection keeps backend task order after toggling', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await installKomariFixture(page, {
+    hideEarth: true,
+    pingTasks: [
+      { id: 1, name: 'Tokyo', weight: 20 },
+      { id: 2, name: 'Mobile', weight: 10 },
+    ],
+  })
+  await openStablePage(page)
+
+  const card = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
+  const selectorButton = page.getByRole('button', { name: '首页自选延迟' })
+
+  async function saveSelection(taskNames: string[]): Promise<void> {
+    await selectorButton.click()
+    const dialog = page.getByRole('dialog', { name: '首页自选延迟' })
+    await expect(dialog).toBeVisible()
+    for (const taskName of taskNames)
+      await dialog.getByRole('button', { name: new RegExp(taskName) }).click()
+    await dialog.getByRole('button', { name: '保存选择' }).click()
+  }
+
+  async function expectTaskOrder(expected: string[]): Promise<void> {
+    const labels = await card.locator('[data-node-ping-bars="latency"]').evaluateAll(bars => bars.map(bar => bar.parentElement?.textContent?.trim() ?? ''))
+    expect(labels).toHaveLength(expected.length)
+    expected.forEach((name, index) => expect(labels[index]).toContain(name))
+  }
+
+  await saveSelection(['Tokyo', 'Mobile'])
+  await expectTaskOrder(['Mobile', 'Tokyo'])
+  await saveSelection(['Mobile'])
+  await expectTaskOrder(['Tokyo'])
+  await saveSelection(['Mobile'])
+  await expectTaskOrder(['Mobile', 'Tokyo'])
+})
+
 test('free node pricing stays semantic across home, finance, and detail', async ({ page }) => {
   const freeNodeName = '主控-洛杉矶'
   const freeNodeUuid = '00000000-0000-4000-8000-000000000001'

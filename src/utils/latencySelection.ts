@@ -28,6 +28,19 @@ export function normalizeLatencyTaskType(task: PingTaskInfo): string {
   return 'PING'
 }
 
+export function latencyTaskAppliesToNode(task: PingTaskInfo, uuid: string): boolean {
+  const clients = Array.isArray(task.clients)
+    ? task.clients.map(client => client.trim()).filter(Boolean)
+    : []
+  const normalizedUuid = uuid.trim()
+
+  if (normalizedUuid && clients.includes(normalizedUuid))
+    return true
+  if (task.default_on === true)
+    return true
+  return clients.length === 0
+}
+
 export function latencyTaskLabel(task: PingTaskInfo): string {
   const type = normalizeLatencyTaskType(task)
   const name = task.name.trim() || `任务 ${task.id}`

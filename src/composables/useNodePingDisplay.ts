@@ -5,7 +5,7 @@ import { useNodePingStats } from '@/composables/useNodePingStats'
 import { PING_SUMMARY_MAX_COUNT } from '@/constants/load'
 import { useAppStore } from '@/stores/app'
 import { formatDateTime } from '@/utils/helper'
-import { normalizeLatencyTaskType } from '@/utils/latencySelection'
+import { latencyTaskAppliesToNode, normalizeLatencyTaskType } from '@/utils/latencySelection'
 
 export type NodePingMetric = 'latency' | 'loss'
 
@@ -62,6 +62,16 @@ export function useNodePingDisplay(
 ) {
   const appStore = useAppStore()
   const latencySelection = useLatencyTaskSelection()
+  const nodeUuid = computed(() => toValue(uuid).trim())
+  const applicableTasks = computed(() => latencySelection.tasks.value.filter(task => latencyTaskAppliesToNode(task, nodeUuid.value)))
+
+  const selectedTaskIdsForNode = computed(() => {
+    const selectedTaskIds = latencySelection.selectedTaskIds.value
+    if (selectedTaskIds === undefined)
+      return undefined
+    const applicableIds = new Set(applicableTasks.value.map(task => task.id))
+    return selectedTaskIds.filter(taskId => applicableIds.has(taskId))
+  })
 
   const pingStatsEnabled = computed(() => {
     if (toValue(options.enabled) === false)
@@ -82,7 +92,13 @@ export function useNodePingDisplay(
     hours: pingStatsHours,
     enabled: pingStatsEnabled,
     maxCount: PING_SUMMARY_MAX_COUNT,
-    taskIds: latencySelection.selectedTaskIds,
+    taskIds: computed(() => {
+      const applicableIds = applicableTasks.value.map(task => task.id)
+      if (latencySelection.selectedTaskIds.value === undefined)
+        return applicableIds.length ? undefined : []
+      const applicableIdSet = new Set(applicableIds)
+      return latencySelection.selectedTaskIds.value.filter(taskId => applicableIdSet.has(taskId))
+    }),
   })
 
   function buildPingBars(metric: NodePingMetric, history = pingStats.history.value): NodePingBar[] {
@@ -173,14 +189,18 @@ export function useNodePingDisplay(
   const selectedTaskLabel = computed(() => {
     if (!latencySelection.hasExplicitSelection.value)
       return '全部任务'
-    const selected = new Set(latencySelection.selectedTaskIds.value ?? [])
-    const names = latencySelection.tasks.value
+    const selected = new Set(selectedTaskIdsForNode.value ?? [])
+    const names = applicableTasks.value
       .filter(task => selected.has(task.id))
       .map(task => latencySelection.taskLabel(task.id, task.name.trim() || `任务 ${task.id}`))
     return names.length ? names.join('、') : '未选择任务'
   })
 
-  const showLatencyPanel = computed(() => latencySelection.selectedTaskIds.value === undefined || latencySelection.selectedTaskIds.value.length > 0)
+  const showLatencyPanel = computed(() => {
+    if (!applicableTasks.value.length)
+      return false
+    return selectedTaskIdsForNode.value === undefined || selectedTaskIdsForNode.value.length > 0
+  })
 
   const taskDisplays = computed(() => {
     if (!latencySelection.hasExplicitSelection.value)
@@ -188,7 +208,7 @@ export function useNodePingDisplay(
 
     const statsByTaskId = new Map(pingStats.tasks.value.map(task => [task.taskId, task]))
     const taskById = new Map(latencySelection.tasks.value.map(task => [task.id, task]))
-    return (latencySelection.selectedTaskIds.value ?? []).map((taskId, index) => {
+    return (selectedTaskIdsForNode.value ?? []).map((taskId, index) => {
       const taskStats = statsByTaskId.get(taskId)
       const task = taskById.get(taskId)
       const latencyBars = taskStats?.history?.length ? buildPingBars('latency', taskStats.history) : buildEmptyPingBars('latency')

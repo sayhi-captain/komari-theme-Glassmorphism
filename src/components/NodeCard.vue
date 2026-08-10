@@ -463,7 +463,7 @@ function hasRegion(region: string | null | undefined): boolean {
           @keydown="handlePingPanelKeyboard"
         >
           <div class="mb-2 flex min-w-0 items-center justify-between gap-2 pb-1.5">
-            <strong class="truncate text-[11px] leading-none text-foreground/80">{{ taskPanelTitle }}</strong>
+            <strong class="text-[11px] leading-none text-foreground/80">{{ taskPanelTitle }}</strong>
             <span class="shrink-0 text-[10px] text-muted-foreground">4H · {{ taskDisplays.length ? `${taskDisplays.length}/3` : '全部' }}</span>
           </div>
 

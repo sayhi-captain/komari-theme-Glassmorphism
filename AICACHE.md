@@ -604,3 +604,8 @@
 - Added a two-task visual regression covering select, deselect, and reselect flows. Full visual regression passed 12/12; targeted ESLint, type-check, build, and `git diff --check` passed.
 - Completed: commit `ff06918` pushed through the SSH remote; stable `v3.3.4` tag and formal Release now point to the order fix.
 - Release asset: `komari-theme-Glassmorphism-build-ff06918.zip`, SHA-256 `a5382b60a637d4a8331d427f8492860621b2d1dd92a676b23c06b3748266afce`.
+
+## 2026-08-10 TCPing title clipping follow-up
+
+- Removed the unnecessary `truncate` utility from the TCPing/Ping/HTTP latency-panel title in `src/components/NodeCard.vue`; these labels are fixed short strings and no longer need overflow clipping.
+- Validation passed: `bun run lint`, `bun run type-check`, `bun run build`, and `git diff --check`; the UI fix commit is ready and the existing `v3.3.4` tag will be moved to it.

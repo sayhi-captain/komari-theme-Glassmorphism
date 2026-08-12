@@ -26,6 +26,17 @@ export interface VisualFixtureOptions {
   expiryThresholds?: boolean
   missingCpuMetricHistory?: boolean
   pingTaskOrdering?: boolean
+  pingClientUuids?: string[]
+  pingTasks?: Array<{ id: number, name: string, interval?: number, loss?: number, weight?: number }>
+}
+
+interface VisualPingTask {
+  id: number
+  name: string
+  interval: number
+  loss: number
+  weight: number
+  clients: string[]
 }
 
 function uuidFor(index: number): string {
@@ -234,6 +245,18 @@ function jsonRpcResult(id: unknown, result: unknown) {
   return { jsonrpc: '2.0', id, result }
 }
 
+function buildPingTasks(clientFixtures: Record<string, unknown>, pingClientUuids?: string[], taskOptions?: VisualFixtureOptions['pingTasks']): VisualPingTask[] {
+  const clientUuids = pingClientUuids ?? Object.keys(clientFixtures)
+  return (taskOptions ?? [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]).map(task => ({
+    id: task.id,
+    name: task.name,
+    interval: task.interval ?? 60,
+    loss: task.loss ?? 3.2,
+    weight: task.weight ?? task.id,
+    clients: clientUuids,
+  }))
+}
+
 async function handleRpc(route: Route, clientFixtures = clients, options: VisualFixtureOptions = {}): Promise<void> {
   const payload = route.request().postDataJSON() as { id: unknown, method: string, params?: Record<string, unknown> }
   const uuid = typeof payload.params?.uuid === 'string' ? payload.params.uuid : uuidFor(0)
@@ -243,7 +266,7 @@ async function handleRpc(route: Route, clientFixtures = clients, options: Visual
         { id: 10, name: '浙江联通', interval: 60, loss: 0, weight: 1 },
         { id: 20, name: '浙江电信', interval: 60, loss: 0, weight: 2 },
       ]
-    : [{ id: 1, name: 'Tokyo', interval: 60, loss: 3.2, weight: 1 }]
+    : buildPingTasks(clientFixtures, options.pingClientUuids, options.pingTasks)
   const metricPingTasks = options.pingTaskOrdering
     ? [pingTasks[2]!, pingTasks[0]!, pingTasks[1]!]
     : pingTasks
@@ -407,6 +430,20 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
   await page.route('**/api/version', route => route.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({ status: 'success', message: 'ok', data: { version: '1.2.6-visual', hash: 'visual' } }),
+  }))
+  await page.route('**/api/task/ping', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify({
+      status: 'success',
+      message: 'ok',
+      data: options.pingTaskOrdering
+        ? [
+            { id: 30, name: '浙江移动', interval: 60, loss: 0, weight: 0, clients: options.pingClientUuids ?? Object.keys(clientFixtures) },
+            { id: 10, name: '浙江联通', interval: 60, loss: 0, weight: 1, clients: options.pingClientUuids ?? Object.keys(clientFixtures) },
+            { id: 20, name: '浙江电信', interval: 60, loss: 0, weight: 2, clients: options.pingClientUuids ?? Object.keys(clientFixtures) },
+          ]
+        : buildPingTasks(clientFixtures, options.pingClientUuids, options.pingTasks),
+    }),
   }))
   await page.route('**/rpc2', route => handleRpc(route, clientFixtures, options))
   await page.route('https://ipwho.is/', route => route.fulfill({

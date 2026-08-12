@@ -603,3 +603,49 @@
 - Implemented 7 deterministic Playwright baselines: light desktop home, dark mobile home, accessible desktop list, Cobe and tiled earth layouts, light desktop detail and dark mobile detail. All use mocked Komari API/RPC/visitor data, fixed time, disabled animations and hidden dynamic 3D canvas pixels while retaining globe layout boundaries.
 - First baseline generation and repeated comparison both passed 7/7 with system Chrome. Windows system-channel Chrome did not exit cleanly after reporting results, so release validation does not treat that local channel teardown as a product failure; CI installs and runs Playwright's managed Chromium.
 - Added the independent `Visual Regression` workflow for pull requests and `main`, with actual/diff/HTML report artifacts retained for 14 days on failure. Release target is v3.3.0.
+
+## 2026-08-07 homepage Ping assignment follow-up
+
+- Root cause: homepage task applicability must follow Komari's `clients` UUID bindings; an empty/missing binding list must not be interpreted as every node. `default_on` remains the explicit all-node/default rule.
+- Changed `src/utils/latencySelection.ts` to normalize array/string client bindings, match trimmed UUIDs, and return false for unbound tasks.
+- Added a Playwright regression fixture/test proving a Ping panel appears only on the assigned node.
+- Validation: targeted ESLint, `bun run type-check`, `git diff --check`, and the focused Playwright test all passed.
+- Completed: full visual regression 11/11 passed; `bun run build` passed; commit `ea92df9` was pushed through the SSH remote; stable `v3.3.4` tag and formal Release asset now point to the fix.
+- Release asset: `komari-theme-Glassmorphism-build-ea92df9.zip`, SHA-256 `42d18dbc7539d97b66246046a3f3830b640748357f607ecce5a01374e835e582`.
+
+## 2026-08-07 Ping empty-panel and TCPing separator follow-up
+
+- Added a second display guard: the homepage Ping panel renders only when the node has applicable tasks and actual Ping history data. This removes empty `-` panels from nodes without monitoring records.
+- Replaced the nested native `<button>` with an accessible `div[role=button]` and removed the header bottom border that produced the tiny TCPing separator/overlay artifact.
+- Extended the visual fixture to return Ping records only for assigned nodes. Full visual regression: 11/11 passed.
+- Completed: commit `9624f58` pushed over SSH; `bun run build` passed; formal stable `v3.3.4` tag and Release asset now point to the fix.
+- Release asset: `komari-theme-Glassmorphism-build-9624f58.zip`, SHA-256 `29afd7e786c4ced84856c92f8d090f89f813eeb97db30068835a018ac21efc2a`.
+
+## 2026-08-07 no-latency card empty state
+
+- Added a compact bottom state for online nodes without applicable latency tasks: `未配置延迟监测`. Nodes with assigned tasks but no samples show `暂无延迟监测数据`; no placeholder latency values or empty Ping bars are rendered.
+- Kept the state independent from the TCPing panel condition so it renders correctly in both `comfortable` and `large` card layouts. The state uses a low-height separator row to avoid an abrupt empty card ending and remains narrow-screen safe.
+- Added a visual assertion for unassigned nodes. Targeted checks passed; full visual regression passed 11/11; `bun run build` passed.
+- Completed: commit `38b7998` pushed through the SSH remote; stable `v3.3.4` tag and formal Release now point to the layout refinement.
+- Release asset: `komari-theme-Glassmorphism-build-38b7998.zip`, SHA-256 `db576a8f90df84f180922401b5739fcd56744152c1ac5dbea91a7fe8caca8720`.
+
+## 2026-08-07 preserve backend Ping task order
+
+- Fixed homepage self-selected latency ordering: task selection now filters the visible task set against the already weight-sorted backend task list, instead of using the user's checkbox/reselection order.
+- The same canonical order is passed into per-task Ping statistics, so removing and re-adding a task cannot move it to the end of the TCPing panel.
+- Added a two-task visual regression covering select, deselect, and reselect flows. Full visual regression passed 12/12; targeted ESLint, type-check, build, and `git diff --check` passed.
+- Completed: commit `ff06918` pushed through the SSH remote; stable `v3.3.4` tag and formal Release now point to the order fix.
+- Release asset: `komari-theme-Glassmorphism-build-ff06918.zip`, SHA-256 `a5382b60a637d4a8331d427f8492860621b2d1dd92a676b23c06b3748266afce`.
+
+## 2026-08-10 TCPing title clipping follow-up
+
+- Removed the unnecessary `truncate` utility from the TCPing/Ping/HTTP latency-panel title in `src/components/NodeCard.vue`; these labels are fixed short strings and no longer need overflow clipping.
+- Validation passed: `bun run lint`, `bun run type-check`, `bun run build`, and `git diff --check`.
+- Source fix committed as `d02f8e0` (`fix: prevent TCPing title clipping`) and pushed to `origin/main`.
+- Annotated `v3.3.4` was force-updated to `d02f8e0` and pushed; remote peeled-tag verification and the GitHub Release page both confirm the target commit.
+
+## 2026-08-10 v3.3.4 release asset rebuild
+
+- GitHub Actions was enabled for the fork, but the existing release workflow has no manual dispatch and correctly skips unchanged-version releases.
+- Built from `d02f8e0` and replaced the GitHub Release asset through the `v3.3.4` edit page: `komari-theme-Glassmorphism-build-d02f8e0.zip`, 7,579,111 bytes.
+- Local and downloaded GitHub asset SHA-256 both equal `29f855f0d399223a69a19844ba9b6abe3a684126d9d9f8561d9018c9aab0bf37`.

@@ -1,3 +1,4 @@
+import type { PingTaskInfo } from '@/utils/rpc'
 import { NETWORK_CONFIG } from '@/constants/network'
 
 /**
@@ -410,6 +411,13 @@ export class KomariApi {
    */
   async getPublicSettings(): Promise<PublicSettings> {
     return this.get<PublicSettings>('/public')
+  }
+
+  /**
+   * 获取公开的 Ping 任务配置（包含节点绑定关系）
+   */
+  async getPublicPingTasks(): Promise<PingTaskInfo[]> {
+    return this.get<PingTaskInfo[]>('/task/ping')
   }
 
   /**

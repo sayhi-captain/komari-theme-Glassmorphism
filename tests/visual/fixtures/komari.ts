@@ -28,6 +28,7 @@ export interface VisualFixtureOptions {
   pingTaskOrdering?: boolean
   pingClientUuids?: string[]
   pingTasks?: Array<{ id: number, name: string, interval?: number, loss?: number, weight?: number }>
+  generalCardKeys?: string[]
 }
 
 interface VisualPingTask {
@@ -381,6 +382,12 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
     homeQuickControlsEnabled: true,
     homeQuickControlPreset: '完整',
     homeToolsEnabled: true,
+    generalCardPreset: '自定义',
+    generalCardKeys: (options.generalCardKeys ?? (
+      options.earthRenderer === 'tiled'
+        ? ['onlineNodes', 'remainingValue', 'monthlyCost', 'totalTraffic', 'uploadSpeed', 'downloadSpeed']
+        : ['memory', 'disk', 'remainingValue', 'totalTraffic', 'uploadSpeed', 'downloadSpeed']
+    )).join('\n'),
   }
 
   await page.addInitScript(({ fixedNow }) => {
